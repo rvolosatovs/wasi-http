@@ -240,28 +240,8 @@ interface types {
   /// trailers at any given time.
   resource body {
 
-    /// Construct a new `body` with the specified stream.
-    ///
-    /// This function returns a future, which will resolve
-    /// to an error code if transmitting stream data fails.
-    ///
-    /// The returned future resolves to success once body stream
-    /// is fully transmitted.
-    new: static func(
-      %stream: stream<u8>,
-    ) -> tuple<body, future<result<_, error-code>>>;
-
-    /// Construct a new `body` with the specified stream and trailers.
-    ///
-    /// This function returns a future, which will resolve
-    /// to an error code if transmitting stream data or trailers fails.
-    ///
-    /// The returned future resolves to success once body stream and trailers
-    /// are fully transmitted.
-    new-with-trailers: static func(
-      %stream: stream<u8>,
-      trailers: future<trailers>
-    ) -> tuple<body, future<result<_, error-code>>>;
+    /// Construct a new `body` with the specified data stream and optional trailer future.
+    constructor(%stream: stream<u8>, trailers: option<future<trailers>>);
 
     /// Returns the contents of the body, as a stream of bytes.
     ///
@@ -276,6 +256,16 @@ interface types {
     /// Takes ownership of `body`, and returns an unresolved optional `trailers` result.
     ///
     /// This function will trap if a `stream` child is still alive.
+    ///
+    /// This function is asynchronous and it returns only once the body data
+    /// transmit or receipt is complete.
+    ///
+    /// For bodies originating from within the component created using the resource
+    /// constructor, the returned future will always return trailers as `none`.
+    ///
+    /// Developers are encouraged to close any open handles returned by previous
+    /// calls to `stream`, if any, before calling this function,
+    /// but calling `finish` will close them with an error context.
     finish: static func(this: body) -> future<result<option<trailers>, error-code>>;
   }
 
